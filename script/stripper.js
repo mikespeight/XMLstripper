@@ -1,53 +1,63 @@
-// Assuming you have an XML file named "data.xml" in the same directory as the HTML file
-
 // Function to read the XML file
-function readXMLFile(file, callback) {
-	var rawFile = new XMLHttpRequest();
+const readXMLFile = (file, callback) => {
+	const rawFile = new XMLHttpRequest();
 	rawFile.overrideMimeType("text/xml");
 	rawFile.open("GET", file, true);
-	rawFile.onreadystatechange = function () {
-		if (rawFile.readyState === 4 && rawFile.status == "200") {
+	rawFile.onreadystatechange = () => {
+		if (rawFile.readyState === 4 && rawFile.status === 200) {
 			callback(rawFile.responseText);
 		}
 	};
 	rawFile.send(null);
-}
+};
 
-// Read the XML file and populate the xmlContent variable
-readXMLFile("data.xml", function (xmlString) {
-	var parser = new DOMParser();
-	var xmlDoc = parser.parseFromString(xmlString, "text/xml");
-	var tableData = xmlDoc.getElementsByTagName("book");
+// Function to handle file input change
+const handleFileInputChange = (event) => {
+	const file = event.target.files[0];
+	const reader = new FileReader();
 
-	var xmlContent = [];
-	for (var i = 0; i < tableData.length; i++) {
-		var book = tableData[i];
-		var title = book.getElementsByTagName("title")[0].childNodes[0].nodeValue;
-		var author = book.getElementsByTagName("author")[0].childNodes[0].nodeValue;
-		var year = book.getElementsByTagName("year")[0].childNodes[0].nodeValue;
+	reader.onload = (e) => {
+		const xmlContent = e.target.result;
 
-		xmlContent.push([title, author, year]);
-	}
+		const parser = new DOMParser();
+		const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+		const tableData = xmlDoc.getElementsByTagName("book");
 
-	// Populate the table using xmlContent
-	var tableContainer = document.getElementById("table-container");
-	var table = document.createElement("table");
+		const xmlData = Array.from(tableData).map((book) => {
+			const title = book.getElementsByTagName("title")[0].childNodes[0].nodeValue;
+			const author = book.getElementsByTagName("author")[0].childNodes[0].nodeValue;
+			const year = book.getElementsByTagName("year")[0].childNodes[0].nodeValue;
 
-	// Create table header
-	var tableHeader = table.createTHead();
-	var headerRow = tableHeader.insertRow();
-	headerRow.innerHTML = "<th>Title</th><th>Author</th><th>Year</th>";
+			return [title, author, year];
+		});
 
-	// Create table body
-	var tableBody = table.createTBody();
-	for (var j = 0; j < xmlContent.length; j++) {
-		var rowData = xmlContent[j];
-		var row = tableBody.insertRow();
-		for (var k = 0; k < rowData.length; k++) {
-			var cell = row.insertCell();
-			cell.innerHTML = rowData[k];
-		}
-	}
+		// Populate the table using xmlData
+		const tableContainer = document.getElementById("table-container");
+		tableContainer.innerHTML = ""; // Clear previous table, if any
 
-	tableContainer.appendChild(table);
-});
+		const table = document.createElement("table");
+
+		// Create table header
+		const tableHeader = table.createTHead();
+		const headerRow = tableHeader.insertRow();
+		headerRow.innerHTML = "<th>Title</th><th>Author</th><th>Year</th>";
+
+		// Create table body
+		const tableBody = table.createTBody();
+		xmlData.forEach((rowData) => {
+			const row = tableBody.insertRow();
+			rowData.forEach((value) => {
+				const cell = row.insertCell();
+				cell.innerHTML = value;
+			});
+		});
+
+		tableContainer.appendChild(table);
+	};
+
+	reader.readAsText(file);
+};
+
+// Add event listener to the file input
+const fileInput = document.getElementById("file-input");
+fileInput.addEventListener("change", handleFileInputChange);
