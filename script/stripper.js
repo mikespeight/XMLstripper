@@ -1,56 +1,53 @@
-// Assuming you have the XML content stored in a variable called xmlContent
+// Assuming you have an XML file named "data.xml" in the same directory as the HTML file
 
-// Create a new DOMParser
-const parser = new DOMParser();
-
-// Parse the XML content
-const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
-
-// Extract the relevant data from the XML
-const entries = xmlDoc.getElementsByTagName('entry');
-
-// Create an empty array to store the extracted data
-const data = [];
-
-// Iterate over the entries and extract the desired information
-for (let i = 0; i < entries.length; i++) {
-	const entry = entries[i];
-	const name = entry.getElementsByTagName('name')[0].textContent;
-	const date = entry.getElementsByTagName('date')[0].textContent;
-	const description = entry.getElementsByTagName('description')[0].textContent;
-
-	// Add the extracted data to the array
-	data.push({ name, date, description });
+// Function to read the XML file
+function readXMLFile(file, callback) {
+	var rawFile = new XMLHttpRequest();
+	rawFile.overrideMimeType("text/xml");
+	rawFile.open("GET", file, true);
+	rawFile.onreadystatechange = function () {
+		if (rawFile.readyState === 4 && rawFile.status == "200") {
+			callback(rawFile.responseText);
+		}
+	};
+	rawFile.send(null);
 }
 
-// Create the HTML table
-const table = document.createElement('table');
+// Read the XML file and populate the xmlContent variable
+readXMLFile("data.xml", function (xmlString) {
+	var parser = new DOMParser();
+	var xmlDoc = parser.parseFromString(xmlString, "text/xml");
+	var tableData = xmlDoc.getElementsByTagName("book");
 
-// Create the table header
-const headerRow = document.createElement('tr');
-const headers = ['Name', 'Date', 'Description'];
+	var xmlContent = [];
+	for (var i = 0; i < tableData.length; i++) {
+		var book = tableData[i];
+		var title = book.getElementsByTagName("title")[0].childNodes[0].nodeValue;
+		var author = book.getElementsByTagName("author")[0].childNodes[0].nodeValue;
+		var year = book.getElementsByTagName("year")[0].childNodes[0].nodeValue;
 
-headers.forEach((headerText) => {
-	const headerCell = document.createElement('th');
-	headerCell.textContent = headerText;
-	headerRow.appendChild(headerCell);
+		xmlContent.push([title, author, year]);
+	}
+
+	// Populate the table using xmlContent
+	var tableContainer = document.getElementById("table-container");
+	var table = document.createElement("table");
+
+	// Create table header
+	var tableHeader = table.createTHead();
+	var headerRow = tableHeader.insertRow();
+	headerRow.innerHTML = "<th>Title</th><th>Author</th><th>Year</th>";
+
+	// Create table body
+	var tableBody = table.createTBody();
+	for (var j = 0; j < xmlContent.length; j++) {
+		var rowData = xmlContent[j];
+		var row = tableBody.insertRow();
+		for (var k = 0; k < rowData.length; k++) {
+			var cell = row.insertCell();
+			cell.innerHTML = rowData[k];
+		}
+	}
+
+	tableContainer.appendChild(table);
 });
-
-table.appendChild(headerRow);
-
-// Create the table rows with the extracted data
-data.forEach((entryData) => {
-	const row = document.createElement('tr');
-
-	Object.values(entryData).forEach((value) => {
-		const cell = document.createElement('td');
-		cell.textContent = value;
-		row.appendChild(cell);
-	});
-
-	table.appendChild(row);
-});
-
-// Append the table to a container element in your HTML
-const container = document.getElementById('table-container');
-container.appendChild(table);
